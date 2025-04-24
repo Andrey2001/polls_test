@@ -353,6 +353,15 @@
             // В реальном приложении можно использовать tg.sendData или другой метод
             // tg.sendData(JSON.stringify(pollData));
             // tg.close();
+
+            // URL для открытия (можно заменить на любой другой)
+            const url = `https://youtu.be/dQw4w9WgXcQ`;
+            
+            // Открытие ссылки в новом окне
+            window.open(url, '_blank');
+            
+            // Альтернативный вариант для Telegram Mini App - открытие через WebApp
+            // tg.openLink(url);
         });
         
         // Обработчики для кнопок удаления вариантов
