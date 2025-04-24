@@ -1,29 +1,369 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>My Mini App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создание опроса</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: Arial; text-align: center; padding: 20px; }
-        button { padding: 10px 15px; background: #0088cc; color: white; border: none; border-radius: 5px; }
+        :root {
+            --tg-theme-bg-color: #ffffff;
+            --tg-theme-text-color: #000000;
+            --tg-theme-hint-color: #707579;
+            --tg-theme-link-color: #3390ec;
+            --tg-theme-button-color: #3390ec;
+            --tg-theme-button-text-color: #ffffff;
+            --tg-theme-secondary-bg-color: #f4f4f5;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        body {
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            padding: 16px;
+            line-height: 1.4;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--tg-theme-text-color);
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e1e3e6;
+            border-radius: 10px;
+            font-size: 16px;
+            background-color: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            transition: border-color 0.2s;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--tg-theme-button-color);
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .option-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .option-item input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        
+        .remove-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ff4d4f;
+            color: white;
+            border: none;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .add-option {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        
+        .add-option svg {
+            margin-right: 6px;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: opacity 0.2s;
+        }
+        
+        .submit-btn:active {
+            opacity: 0.8;
+        }
+        
+        .poll-type-selector {
+            display: flex;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            background-color: var(--tg-theme-secondary-bg-color);
+        }
+        
+        .poll-type-option {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .poll-type-option.active {
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .checkbox-group input {
+            width: auto;
+            margin-right: 10px;
+        }
+        
+        .checkbox-group label {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
-    <h1>Привет, <span id="username"></span>!</h1>
-    <button onclick="sendData()">Отправить данные боту</button>
+    <div class="container">
+        <h1>Создать новый опрос</h1>
+        
+        <div class="form-group">
+            <label for="poll-question">Вопрос опроса</label>
+            <textarea id="poll-question" placeholder="Введите ваш вопрос" required></textarea>
+        </div>
+        
+        <div class="poll-type-selector">
+            <div class="poll-type-option active" data-type="regular">Обычный</div>
+            <div class="poll-type-option" data-type="quiz">Викторина</div>
+        </div>
+        
+        <div class="form-group" id="options-container">
+            <label>Варианты ответов</label>
+            <div class="option-item">
+                <input type="text" placeholder="Вариант 1" required>
+                <button class="remove-option" disabled>×</button>
+            </div>
+            <div class="option-item">
+                <input type="text" placeholder="Вариант 2" required>
+                <button class="remove-option" disabled>×</button>
+            </div>
+            <button class="add-option" id="add-option">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 4V20M4 12H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Добавить вариант
+            </button>
+        </div>
+        
+        <div id="quiz-options" style="display: none;">
+            <div class="form-group">
+                <label for="correct-option">Правильный вариант</label>
+                <select id="correct-option">
+                    <option value="1">Вариант 1</option>
+                    <option value="2">Вариант 2</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="explanation">Объяснение (необязательно)</label>
+                <textarea id="explanation" placeholder="Объяснение правильного ответа"></textarea>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <div class="checkbox-group">
+                <input type="checkbox" id="anonymous">
+                <label for="anonymous">Анонимный опрос</label>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="multiple">
+                <label for="multiple">Множественный выбор</label>
+            </div>
+        </div>
+        
+        <button class="submit-btn" id="submit-poll">Создать опрос</button>
+    </div>
 
     <script>
+        // Инициализация Telegram WebApp
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Развернуть приложение на весь экран
-
-        // Показываем данные пользователя
-        document.getElementById('username').textContent = tg.initDataUnsafe.user?.first_name || 'Аноним';
-
-        // Отправка данных боту
-        function sendData() {
-            tg.sendData(JSON.stringify({ action: 'button_click' }));
-            tg.close(); // Закрыть Mini App
+        tg.expand();
+        
+        // Обработчики для переключения типа опроса
+        const pollTypeOptions = document.querySelectorAll('.poll-type-option');
+        pollTypeOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                pollTypeOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                
+                if (option.dataset.type === 'quiz') {
+                    document.getElementById('quiz-options').style.display = 'block';
+                } else {
+                    document.getElementById('quiz-options').style.display = 'none';
+                }
+            });
+        });
+        
+        // Добавление новых вариантов ответа
+        document.getElementById('add-option').addEventListener('click', () => {
+            const optionsContainer = document.getElementById('options-container');
+            const optionCount = optionsContainer.querySelectorAll('.option-item').length;
+            
+            if (optionCount >= 10) {
+                alert('Максимальное количество вариантов - 10');
+                return;
+            }
+            
+            const newOption = document.createElement('div');
+            newOption.className = 'option-item';
+            newOption.innerHTML = `
+                <input type="text" placeholder="Вариант ${optionCount + 1}" required>
+                <button class="remove-option">×</button>
+            `;
+            
+            optionsContainer.insertBefore(newOption, document.getElementById('add-option'));
+            
+            // Обновить select с правильными ответами для викторины
+            updateCorrectOptions();
+            
+            // Добавить обработчик удаления для новой кнопки
+            newOption.querySelector('.remove-option').addEventListener('click', () => {
+                if (optionsContainer.querySelectorAll('.option-item').length > 2) {
+                    newOption.remove();
+                    updateCorrectOptions();
+                }
+            });
+        });
+        
+        // Обновление вариантов в select для викторины
+        function updateCorrectOptions() {
+            const correctOptionSelect = document.getElementById('correct-option');
+            const options = document.querySelectorAll('.option-item input');
+            
+            correctOptionSelect.innerHTML = '';
+            
+            options.forEach((option, index) => {
+                const opt = document.createElement('option');
+                opt.value = index + 1;
+                opt.textContent = `Вариант ${index + 1}`;
+                correctOptionSelect.appendChild(opt);
+            });
         }
+        
+        // Обработчик отправки формы
+        document.getElementById('submit-poll').addEventListener('click', () => {
+            const question = document.getElementById('poll-question').value.trim();
+            const isQuiz = document.querySelector('.poll-type-option.active').datasetaset.type === 'quiz';
+            const options = Array.from(document.querySelectorAll('.option-item input')).map(input => input.value.trim());
+            const anonymous = document.getElementById('anonymous').checked;
+            const multiple = document.getElementById('multiple').checked;
+            
+            // Валидация
+            if (!question) {
+                alert('Введите вопрос опроса');
+                return;
+            }
+            
+            if (options.some(opt => !opt)) {
+                alert('Все варианты ответа должны быть заполнены');
+                return;
+            }
+            
+            if (options.length < 2) {
+                alert('Должно быть как минимум 2 варианта ответа');
+                return;
+            }
+            
+            if (new Set(options).size !== options.length) {
+                alert('Варианты ответа не должны повторяться');
+                return;
+            }
+            
+            // Сбор данных опроса
+            const pollData = {
+                question,
+                options,
+                is_anonymous: anonymous,
+                allows_multiple_answers: multiple,
+                type: isQuiz ? 'quiz' : 'regular'
+            };
+            
+            if (isQuiz) {
+                pollData.correct_option_id = parseInt(document.getElementById('correct-option').value) - 1;
+                const explanation = document.getElementById('explanation').value.trim();
+                if (explanation) pollData.explanation = explanation;
+            }
+            
+            // Отправка данных в Telegram (здесь можно добавить реальную логику отправки)
+            console.log('Данные опроса:', pollData);
+            alert('Опрос успешно создан!');
+            
+            // В реальном приложении можно использовать tg.sendData или другой метод
+            // tg.sendData(JSON.stringify(pollData));
+            // tg.close();
+        });
+        
+        // Обработчики для кнопок удаления вариантов
+        document.querySelectorAll('.remove-option').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (document.querySelectorAll('.option-item').length > 2) {
+                    this.parentElement.remove();
+                    updateCorrectOptions();
+                }
+            });
+        });
     </script>
 </body>
 </html>
