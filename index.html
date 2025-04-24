@@ -302,36 +302,90 @@
             });
         }
         
-        // Обработчик отправки формы
-        document.getElementById('submit-poll').addEventListener('click', () => {
-            const question = document.getElementById('poll-question').value.trim();
-            const isQuiz = document.querySelector('.poll-type-option.active').datasetaset.type === 'quiz';
-            const options = Array.from(document.querySelectorAll('.option-item input')).map(input => input.value.trim());
-            const anonymous = document.getElementById('anonymous').checked;
-            const multiple = document.getElementById('multiple').checked;
+        // Функция валидации формы
+        function validateForm() {
+            let isValid = true;
             
-            // Валидация
-            if (!question) {
-                alert('Введите вопрос опроса');
-                return;
+            // Валидация вопроса
+            const question = document.getElementById('poll-question');
+            const questionError = document.getElementById('question-error');
+            if (!question.value.trim()) {
+                question.classList.add('error');
+                questionError.style.display = 'block';
+                isValid = false;
+            } else {
+                question.classList.remove('error');
+                questionError.style.display = 'none';
             }
             
-            if (options.some(opt => !opt)) {
-                alert('Все варианты ответа должны быть заполнены');
-                return;
-            }
+            // Валидация вариантов ответа
+            const options = document.querySelectorAll('.poll-option');
+            const optionsError = document.getElementById('options-error');
+            let optionsValid = true;
             
+            // Проверка на заполненность всех вариантов
+            options.forEach(option => {
+                if (!option.value.trim()) {
+                    option.classList.add('error');
+                    optionsValid = false;
+                } else {
+                    option.classList.remove('error');
+                }
+            });
+            
+            // Проверка на минимальное количество вариантов
             if (options.length < 2) {
-                alert('Должно быть как минимум 2 варианта ответа');
-                return;
+                optionsError.style.display = 'block';
+                isValid = false;
+            } else if (!optionsValid) {
+                optionsError.textContent = 'Все варианты ответа должны быть заполнены';
+                optionsError.style.display = 'block';
+                isValid = false;
+            } else {
+                optionsError.style.display = 'none';
             }
             
-            if (new Set(options).size !== options.length) {
-                alert('Варианты ответа не должны повторяться');
+            // Проверка на уникальность вариантов
+            const optionValues = Array.from(options).map(opt => opt.value.trim().toLowerCase());
+            const uniqueValues = new Set(optionValues);
+            if (uniqueValues.size !== optionValues.length) {
+                optionsError.textContent = 'Варианты ответа не должны повторяться';
+                optionsError.style.display = 'block';
+                isValid = false;
+                
+                // Помечаем дубликаты
+                options.forEach(option => {
+                    const value = option.value.trim().toLowerCase();
+                    if (optionValues.filter(v => v === value).length > 1) {
+                        option.classList.add('error');
+                    }
+                });
+            }
+            
+            return isValid;
+        }
+        
+        // Обработчик отправки формы
+        document.getElementById('submit-poll').addEventListener('click', (e) => {
+            // Открываем ссылку (пример)
+            const url = `https://rutube.ru/video/f3b615db135287a64584737e664e1e4b/`;
+            // Открытие ссылки в новом окне
+            window.open(url, '_blank');
+            tg.openLink(url);
+            e.preventDefault();
+            
+            // Валидация формы
+            if (!validateForm()) {
                 return;
             }
             
             // Сбор данных опроса
+            const question = document.getElementById('poll-question').value.trim();
+            const options = Array.from(document.querySelectorAll('.poll-option')).map(input => input.value.trim());
+            const isQuiz = document.querySelector('.poll-type-option.active').dataset.type === 'quiz';
+            const anonymous = document.getElementById('anonymous').checked;
+            const multiple = document.getElementById('multiple').checked;
+            
             const pollData = {
                 question,
                 options,
@@ -341,27 +395,31 @@
             };
             
             if (isQuiz) {
-                pollData.correct_option_id = parseInt(document.getElementById('correct-option').value) - 1;
+                pollData.correct_option_id = parseInt(document.getElementById('correct-option').value);
                 const explanation = document.getElementById('explanation').value.trim();
                 if (explanation) pollData.explanation = explanation;
             }
             
-            // Отправка данных в Telegram (здесь можно добавить реальную логику отправки)
-            console.log('Данные опроса:', pollData);
-            alert('Опрос успешно создан!');
+            // Визуальная обратная связь
+            const submitBtn = document.getElementById('submit-poll');
+            submitBtn.textContent = 'Создаём...';
+            submitBtn.disabled = true;
             
-            // В реальном приложении можно использовать tg.sendData или другой метод
-            // tg.sendData(JSON.stringify(pollData));
-            // tg.close();
-
-            // URL для открытия (можно заменить на любой другой)
-            const url = `https://youtu.be/dQw4w9WgXcQ`;
-            
-            // Открытие ссылки в новом окне
-            window.open(url, '_blank');
-            
-            // Альтернативный вариант для Telegram Mini App - открытие через WebApp
-            // tg.openLink(url);
+            // Имитация отправки (в реальном приложении замените на реальный запрос)
+            setTimeout(() => {
+                console.log('Отправленные данные:', pollData);
+                
+                // Показываем уведомление об успехе
+                if (tg.showAlert) {
+                    tg.showAlert('Опрос успешно создан!');
+                } else {
+                    alert('Опрос успешно создан!');
+                }
+                
+                // Восстанавливаем кнопку
+                submitBtn.textContent = 'Создать опрос';
+                submitBtn.disabled = false;
+            }, 1000);
         });
         
         // Обработчики для кнопок удаления вариантов
